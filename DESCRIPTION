@@ -1,11 +1,11 @@
-Package: pmk
+Package: pmkl
 Title: Predicted model-based k-medoids
 Version: 0.0.0.9000
 Authors@R: 
     person("Daren", "Kuwaye", , "daren-kuwaye@uiowa.edu", role = c("aut", "cre"))
-Description: Longitudinal clustering by first fitting penalized splines, then predicting at a sequence of points.  Calculates model-based pairwise proximity.  Clusters wit k-medoids clustering.
+Description: Longitudinal clustering by fitting penalized splines, predicting at a sequence of points, calculating model-based pairwise proximity, and finally partitioning with k-medoids clustering.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
-Requires: cluster, dplyr, mgcv, tidyr, lmf
+RoxygenNote: 7.3.1
+Requires: cluster, dplyr, mgcv, tidyr, lmf, ggplot2
