@@ -11,13 +11,14 @@
 #' @importFrom dplyr mutate
 #' @importFrom dplyr pull
 #' @importFrom dplyr row_number
-#' @import funHDDC
 #' @import kml
 #' @import lmf
 #' @import mclust
 #' @importFrom mclust adjustedRandIndex
 #' @importFrom magrittr `%>%`
 #' @import splines
+#' @importFrom stats as.dist coef dist kmeans lm rnorm runif var vcov
+#' @importFrom utils capture.output
 #'
 #' @examples
 #' set.seed(808)
@@ -39,13 +40,12 @@ iteration <- function(){
   ab2 <- sim.abe(cd, G, max_k, "CH")
   ab3 <- sim.abe(cd, G, max_k, "Gap", clusGap_boot)
   mld <- sim.mld(cd, G, "Gapb")
-  fun <- sim.funHDDC(cd, G, max_k)
   kml <- sim.kml(cd, G, max_k, "ED")
   mcl <- sim.mclust(cd, G, max_k)
   ##
   out <- rbind(pe1, pe2, pe3, pe4, pe5, pe6, pe7, pe8, pe9,
                ab1, ab2, ab3,
-               mld, fun, kml, mcl) %>%
+               mld, kml, mcl) %>%
     as.data.frame() %>%
     mutate(set = set, sp = sp, Ng = Ng, ni = ni, sigma = sigma, it = sim)
   return(out)
@@ -181,40 +181,6 @@ sim.mld <- function(cd, G, qc = "Gapb"){
   #
   return(data.frame(meth = "mld", vc = NA, qc = qc,
                     khat = khat, ari = ari, csa = csa))
-}
-
-# funHDDC, strange transpose
-sim.funHDDC <- function(cd, G, max_k = 6){
-  dat <- cd$dat
-  dat_wide <- cd$dat_wide
-  t <- as.numeric(colnames(dat_wide))
-  id <- rownames(dat_wide)
-
-  splines <- funHDDC::create.bspline.basis(rangeval = c(min(t), max(t)),
-                                           nbasis = 6,
-                                           norder = 4)
-  fdata <- funHDDC::Data2fd(argvals = t, y = t(dat_wide), basisobj = splines)
-
-  tmp1 <- tryCatch({
-    invisible(capture.output(mod1 <- funHDDC::funHDDC(fdata, K = 1:max_k)))
-    # Outcome 1: number of clusters
-    khat <- mod1$K  # estimated number of clusters
-    # Outcome 2: adjusted rand index
-    ari <- adjustedRandIndex(mod1$class, cd$oracle)
-    list(khat = khat, ari = ari)
-  }, warning = function(w){
-    return(list(khat = NA, ari = NA))
-  })
-  tmp2 <- tryCatch({
-    # Outcome 3: cluster specific accuracy
-    invisible(capture.output(mod2 <- funHDDC::funHDDC(fdata, K = G)))
-    csa <- cal.csa(mod2$class, cd$oracle)
-    list(csa = csa)
-  }, warning = function(w){
-    return(list(csa = NA))
-  })
-  return(data.frame(meth = "fun", vc = NA, qc = "BIC",
-                    khat = tmp1$khat, ari = tmp1$ari, csa = tmp2$csa))
 }
 
 # kml, wide form

@@ -18,6 +18,7 @@
 #' @import lmf
 #' @importFrom magrittr `%>%`
 #' @import mgcv
+#' @importFrom stats as.dist coef dist var vcov
 #'
 #' @examples
 #' set.seed(808)

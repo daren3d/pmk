@@ -11,6 +11,10 @@
 #' @importFrom dplyr left_join
 #' @importFrom dplyr mutate
 #' @importFrom dplyr select
+#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 geom_line
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 facet_wrap
 #' @importFrom tidyr pivot_wider
 #'
 #' @examples
