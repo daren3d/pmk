@@ -9,6 +9,15 @@
 #'
 #' @return The results from `cluster::pam`; a `pam` object.
 #' @export
+#' @import cluster
+#' @importFrom dplyr filter
+#' @importFrom dplyr group_by
+#' @importFrom dplyr n
+#' @importFrom dplyr pull
+#' @importFrom dplyr row_number
+#' @import lmf
+#' @importFrom magrittr `%>%`
+#' @import mgcv
 #'
 #' @examples
 #' set.seed(808)
@@ -22,7 +31,7 @@ pmkl <- function (dat, lo = 10, vc = "II", qc = "CH", max_k = 6, clusGap_boot = 
   co <- create.pred(dat, lo)
   prox <- create.pro_mat(co, vc)
   khat <- cal.khat(prox, qc, max_k, clusGap_boot)
-  mod <- pam(as.dist(prox), k = khat, nstart = 10)
+  mod <- cluster::pam(as.dist(prox), k = khat, nstart = 10)
   return(mod)
 }
 
@@ -46,9 +55,9 @@ create.pred <- function(dat, lo = 10){
   for(i in 1:N){
     dat_sub <- dat %>%
       filter(id == idd[i])
-    mod <- gam(response ~ s(time, bs = "bs"), data = dat_sub)
-    mod_Xs <- predict(mod, newdata = s, type = "lpmatrix")
-    val[i, ] <- c(mod_Xs %*% coefficients(mod))
+    mod <- mgcv::gam(response ~ s(time, bs = "bs"), data = dat_sub)
+    mod_Xs <- mgcv::predict(mod, newdata = s, type = "lpmatrix")
+    val[i, ] <- c(mod_Xs %*% mgcv::coefficients(mod))
     vcm[[i]] <- mod_Xs %*% vcov(mod) %*% t(mod_Xs)
   }
   out <- list(val = val, vcm = vcm, N = N,
@@ -89,7 +98,7 @@ cal.khat <- function(pro_mat, qc = "CH", max_k = 6, clusGap_boot = 100){
   if(qc == "ASW"){
     khat <- rep(NA, max_k)
     for(k in 2:max_k){
-      mod <- pam(as.dist(pro_mat), k = k, nstart = 10)
+      mod <- cluster::pam(as.dist(pro_mat), k = k, nstart = 10)
       khat[k] <- mod$silinfo$avg.width
     }
     khat <- flm(khat[-1]) + 1
@@ -98,7 +107,7 @@ cal.khat <- function(pro_mat, qc = "CH", max_k = 6, clusGap_boot = 100){
     N <- nrow(pro_mat)
     R <- sum(pro_mat^2) / N / 2  # total sum of squares (TSS)
     for(k in 2:max_k){
-      mod <- pam(as.dist(pro_mat), k = k, nstart = 10)
+      mod <- cluster::pam(as.dist(pro_mat), k = k, nstart = 10)
       Rg <- rep(NA, k)
       for(gp in 1:k){
         id_gp <- mod$clustering == gp
@@ -111,9 +120,9 @@ cal.khat <- function(pro_mat, qc = "CH", max_k = 6, clusGap_boot = 100){
     }
     khat <- flm(khat[-1]) + 1
   }else{
-    cg <- clusGap(pro_mat, pam, K.max = max_k, B = clusGap_boot,
-                  verbose = FALSE, diss = TRUE)
-    khat <- maxSE(cg$Tab[, "gap"], cg$Tab[, "SE.sim"])
+    cg <- cluster::clusGap(pro_mat, pam, K.max = max_k, B = clusGap_boot,
+                           verbose = FALSE, diss = TRUE)
+    khat <- cluster::maxSE(cg$Tab[, "gap"], cg$Tab[, "SE.sim"])
   }
   return(khat)
 }

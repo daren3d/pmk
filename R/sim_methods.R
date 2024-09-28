@@ -2,6 +2,22 @@
 #'
 #' @return A `data.frame`.
 #' @export
+#' @import cluster
+#' @import clusterMLD
+#' @import combinat
+#' @importFrom dplyr arrange
+#' @importFrom dplyr group_by
+#' @importFrom dplyr filter
+#' @importFrom dplyr mutate
+#' @importFrom dplyr pull
+#' @importFrom dplyr row_number
+#' @import funHDDC
+#' @import kml
+#' @import lmf
+#' @import mclust
+#' @importFrom mclust adjustedRandIndex
+#' @importFrom magrittr `%>%`
+#' @import splines
 #'
 #' @examples
 #' set.seed(808)
@@ -26,7 +42,7 @@ iteration <- function(){
   fun <- sim.funHDDC(cd, G, max_k)
   kml <- sim.kml(cd, G, max_k, "ED")
   mcl <- sim.mclust(cd, G, max_k)
-
+  ##
   out <- rbind(pe1, pe2, pe3, pe4, pe5, pe6, pe7, pe8, pe9,
                ab1, ab2, ab3,
                mld, fun, kml, mcl) %>%
@@ -54,7 +70,7 @@ sim.pmkl <- function(cd, G, max_k = 6, vc = "II", qc = "CH",
   # Outcome 3: cluster specific accuracy
   co <- create.pred(cd$dat, lo)
   prox <- create.pro_mat(co, vc)
-  mod3 <- pam(as.dist(prox), k = G, nstart = 10)
+  mod3 <- cluster::pam(as.dist(prox), k = G, nstart = 10)
   csa <- cal.csa(mod3$clustering, cd$oracle)
   #
   return(data.frame(meth = "pred", vc = vc, qc = qc,
@@ -69,10 +85,10 @@ sim.pmkl <- function(cd, G, max_k = 6, vc = "II", qc = "CH",
   # Outcome 1: number of clusters
   khat <- cal.khat(prox, qc, max_k, clusGap_boot)
   # Outcome 2: adjusted rand index
-  mod2 <- pam(as.dist(prox), k = khat, nstart = 10)
+  mod2 <- cluster::pam(as.dist(prox), k = khat, nstart = 10)
   ari <- adjustedRandIndex(mod2$clustering, cd$oracle)
   # Outcome 3: cluster specific accuracy
-  mod3 <- pam(as.dist(prox), k = G, nstart = 10)
+  mod3 <- cluster::pam(as.dist(prox), k = G, nstart = 10)
   csa <- cal.csa(mod3$clustering, cd$oracle)
   #
   return(data.frame(meth = "pred", vc = vc, qc = qc,
@@ -110,7 +126,7 @@ sim.abe <- function(cd, G, max_k = 6, qc = "CH", clusGap_boot = 100){
     khat <- rep(NA, max_k)
     for(k in 2:max_k){
       mod <- kmeans(val, centers = k, nstart = 10)
-      khat[k] <- mean(silhouette(x = mod$cluster, dist = dist(val))[, 3])
+      khat[k] <- mean(cluster::silhouette(x = mod$cluster, dist = dist(val))[, 3])
     }
     khat <- flm(khat[-1]) + 1
   }else if(qc == "CH"){
@@ -121,8 +137,8 @@ sim.abe <- function(cd, G, max_k = 6, qc = "CH", clusGap_boot = 100){
     }
     khat <- flm(khat[-1]) + 1
   }else {  # qc == "Gap"
-    cg <- clusGap(val, kmeans, K.max = max_k, B = clusGap_boot, verbose = FALSE)
-    khat <- maxSE(cg$Tab[, "gap"], cg$Tab[, "SE.sim"])
+    cg <- cluster::clusGap(val, kmeans, K.max = max_k, B = clusGap_boot, verbose = FALSE)
+    khat <- cluster::maxSE(cg$Tab[, "gap"], cg$Tab[, "SE.sim"])
   }
   mod2 <- kmeans(val, khat, nstart = 10)
   ari <- adjustedRandIndex(mod2$cluster, cd$oracle)
@@ -136,7 +152,7 @@ sim.abe <- function(cd, G, max_k = 6, qc = "CH", clusGap_boot = 100){
 
 # clusterMLD, long form
 sim.mld <- function(cd, G, qc = "Gapb"){
-  mod <- with(cd$dat, LongDataCluster(time, response, id))
+  mod <- with(cd$dat, clusterMLD::LongDataCluster(time, response, id))
   qc <- match.arg(qc, c("CH", "Gapb"))
   if(qc == "CH"){
     # Outcome 1: number of clusters
@@ -160,7 +176,7 @@ sim.mld <- function(cd, G, qc = "Gapb"){
   l2 <- lapply(1:G, function(x){data.frame(id = mod$Cluster.Lists[[G]][[x]],
                                            clus = x)}) |>
     do.call(what = rbind) |>
-    dplyr::arrange(id)
+    arrange(id)
   csa <- cal.csa(l2$clus, cd$oracle)
   #
   return(data.frame(meth = "mld", vc = NA, qc = qc,
@@ -174,13 +190,13 @@ sim.funHDDC <- function(cd, G, max_k = 6){
   t <- as.numeric(colnames(dat_wide))
   id <- rownames(dat_wide)
 
-  splines <- create.bspline.basis(rangeval = c(min(t), max(t)),
-                                  nbasis = 6,
-                                  norder = 4)
-  fdata <- Data2fd(argvals = t, y = t(dat_wide), basisobj = splines)
+  splines <- funHDDC::create.bspline.basis(rangeval = c(min(t), max(t)),
+                                           nbasis = 6,
+                                           norder = 4)
+  fdata <- funHDDC::Data2fd(argvals = t, y = t(dat_wide), basisobj = splines)
 
   tmp1 <- tryCatch({
-    invisible(capture.output(mod1 <- funHDDC(fdata, K = 1:max_k)))
+    invisible(capture.output(mod1 <- funHDDC::funHDDC(fdata, K = 1:max_k)))
     # Outcome 1: number of clusters
     khat <- mod1$K  # estimated number of clusters
     # Outcome 2: adjusted rand index
@@ -191,7 +207,7 @@ sim.funHDDC <- function(cd, G, max_k = 6){
   })
   tmp2 <- tryCatch({
     # Outcome 3: cluster specific accuracy
-    invisible(capture.output(mod2 <- funHDDC(fdata, K = G)))
+    invisible(capture.output(mod2 <- funHDDC::funHDDC(fdata, K = G)))
     csa <- cal.csa(mod2$class, cd$oracle)
     list(csa = csa)
   }, warning = function(w){
@@ -208,29 +224,22 @@ sim.kml <- function(cd, G, max_k = 6, vc = "ED"){
   id <- rownames(dat_wide)
   vc <- match.arg(vc, c("ED", "MD"))
   if (vc == "MD") {
-    csv <- dat_wide |>
-      var() |>
-      lmf::nearPD() |>
-      solve() |>
-      chol()
+    csv <- chol(solve(lmf::nearPD(var(dat_wide))))
     dat_wide <- as.matrix(dat_wide) %*% t(csv)
   }
   tid <- 1:ncol(dat_wide)
-  mod <- cld(dat_wide, idAll = id, time = t, timeInData = tid)
-  invisible(capture.output(
-    kml(mod,
-        nbClusters = 2:max_k,
-        nbRedrawing = 1,
-        parAlgo = parALGO(saveFreq = Inf))
-  ))
+  mod <- kml::cld(dat_wide, idAll = id, time = t, timeInData = tid)
+  invisible(capture.output(kml::kml(mod, nbClusters = 2:max_k,
+                                    nbRedrawing = 1,
+                                    parAlgo = kml::parALGO(saveFreq = Inf))))
   # Outcome 1: number of clusters
   ch <- unlist(mod["criterionValuesAsMatrix"])
   names(ch) <- NULL
   khat <- flm(ch) + 1
   # Outcome 2: adjusted rand index
-  ari <- adjustedRandIndex(getClusters(mod, khat), cd$oracle)
+  ari <- adjustedRandIndex(kml::getClusters(mod, khat), cd$oracle)
   # Outcome 3: cluster specific accuracy
-  csa <- cal.csa(getClusters(mod, G), cd$oracle)
+  csa <- cal.csa(kml::getClusters(mod, G), cd$oracle)
   #
   return(data.frame(meth = "kml", vc = vc, qc = "CH",
                     khat = khat, ari = ari, csa = csa))
@@ -241,12 +250,12 @@ sim.mclust <- function(cd, G, max_k = 6){
   co <- create.beta(cd$dat)
   val <- co$val
   # Outcome 1: number of clusters
-  invisible(capture.output(mod <- Mclust(val, G = 1:max_k)))
+  invisible(capture.output(mod <- mclust::Mclust(val, G = 1:max_k)))
   khat <- mod$G
   # Outcome 2: adjusted rand index
   ari <- adjustedRandIndex(mod$classification, cd$oracle)
   # Outcome 3: cluster specific accuracy
-  invisible(capture.output(mod3 <- Mclust(val, G = G)))
+  invisible(capture.output(mod3 <- mclust::Mclust(val, G = G)))
   csa <- cal.csa(mod3$classification, cd$oracle)
   #
   return(data.frame(meth = "mclust", vc = NA, qc = "BIC",

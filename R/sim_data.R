@@ -7,6 +7,11 @@
 #'
 #' @return A `list` with data in long and wide form, true cluster assignments and true number of clusters.
 #' @export
+#' @importFrom dplyr filter
+#' @importFrom dplyr left_join
+#' @importFrom dplyr mutate
+#' @importFrom dplyr select
+#' @importFrom tidyr pivot_wider
 #'
 #' @examples
 #' set.seed(808)
@@ -50,9 +55,9 @@ create.data <- function(sp = "regular", Ng = "50:50:50", ni = 50, sigma = 1){
     mutate(er = rnorm(n, sd = sigma),
            response = f + er)
   dat_wide <- dat %>%
-    dplyr::select(id, t0, response) %>%
-    tidyr::pivot_wider(names_from = t0, values_from = response) %>%
-    dplyr::select(-id)
+    select(id, t0, response) %>%
+    pivot_wider(names_from = t0, values_from = response) %>%
+    select(-id)
   return(list(dat = dat, dat_wide = dat_wide, oracle = or, G = G))
 }
 create.A <- function(t){
