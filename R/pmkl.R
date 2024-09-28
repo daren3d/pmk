@@ -57,8 +57,8 @@ create.pred <- function(dat, lo = 10){
     dat_sub <- dat %>%
       filter(id == idd[i])
     mod <- mgcv::gam(response ~ s(time, bs = "bs"), data = dat_sub)
-    mod_Xs <- mgcv::predict(mod, newdata = s, type = "lpmatrix")
-    val[i, ] <- c(mod_Xs %*% mgcv::coefficients(mod))
+    mod_Xs <- predict(mod, newdata = s, type = "lpmatrix")
+    val[i, ] <- c(mod_Xs %*% coefficients(mod))
     vcm[[i]] <- mod_Xs %*% vcov(mod) %*% t(mod_Xs)
   }
   out <- list(val = val, vcm = vcm, N = N,
