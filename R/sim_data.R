@@ -7,22 +7,12 @@
 #'
 #' @return A `list` with data in long and wide form, true cluster assignments and true number of clusters.
 #' @export
-#' @importFrom dplyr filter
-#' @importFrom dplyr left_join
-#' @importFrom dplyr mutate
-#' @importFrom dplyr select
-#' @importFrom ggplot2 aes
-#' @importFrom ggplot2 geom_line
-#' @importFrom ggplot2 ggplot
-#' @importFrom ggplot2 facet_wrap
-#' @importFrom tidyr pivot_wider
+#' @import dplyr
 #'
 #' @examples
 #' set.seed(808)
 #' cd <- create.data(sigma = 0.1)
-#' ggplot(cd$dat, aes(x = time, y = response, group = id)) +
-#'   geom_line() +
-#'   facet_wrap(~ oracle)
+#' plot(response ~ time, data = cd$dat, type = "p")
 create.data <- function(sp = "regular", Ng = "50:50:50", ni = 50, sigma = 1){
   Ng <- Ng |>
     strsplit(":") |>
@@ -60,7 +50,7 @@ create.data <- function(sp = "regular", Ng = "50:50:50", ni = 50, sigma = 1){
            response = f + er)
   dat_wide <- dat %>%
     select(id, t0, response) %>%
-    pivot_wider(names_from = t0, values_from = response) %>%
+    tidyr::pivot_wider(names_from = t0, values_from = response) %>%
     select(-id)
   return(list(dat = dat, dat_wide = dat_wide, oracle = or, G = G))
 }
@@ -79,7 +69,7 @@ create.C <- function(t){
 create.fun <- function(x, dat){
   g <- LETTERS[x]
   dat <- dat %>%
-    filter(oracle == g) %>%
+    dplyr::filter(oracle == g) %>%
     mutate(f = eval(parse(text = paste0("create.", g, "(time)"))))
   return(dat)
 }

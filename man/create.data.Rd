@@ -24,7 +24,5 @@ Create data to be used in simulation
 \examples{
 set.seed(808)
 cd <- create.data(sigma = 0.1)
-ggplot(cd$dat, aes(x = time, y = response, group = id)) +
-  geom_line() +
-  facet_wrap(~ oracle)
+plot(response ~ time, data = cd$dat, type = "p")
 }

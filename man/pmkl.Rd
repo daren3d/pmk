@@ -27,10 +27,14 @@ Prediction model-based k-medoids for longitudinal data
 }
 \examples{
 set.seed(808)
-N <- 50
 n <- 50
-dat <- data.frame(id = rep(1:N, each = n),
-time = rep(seq(0, 1, length.out = n), times = N),
-response = rnorm(25))
-mod <- pmkl(dat)
+dat <- data.frame(id = rep(1:9, each = n),
+                  time = c(sort(runif(n)), sort(runif(n)), sort(runif(n)),
+                           sort(runif(n)), sort(runif(n)), sort(runif(n)),
+                           sort(runif(n)), sort(runif(n)), sort(runif(n))),
+                  response = c(rnorm(3 * n, mean = 1, sd = 0.1),
+                               rnorm(3 * n, mean = 2, sd = 0.1),
+                               rnorm(3 * n, mean = 3, sd = 0.1)))
+mod <- pmkl(dat, vc = "ED")
+table(mod$clustering, c(1, 1, 1, 2, 2, 2, 3, 3, 3))
 }

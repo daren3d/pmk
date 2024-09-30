@@ -2,27 +2,18 @@
 #'
 #' @return A `data.frame`.
 #' @export
-#' @import cluster
-#' @import clusterMLD
-#' @import combinat
-#' @importFrom dplyr arrange
-#' @importFrom dplyr group_by
-#' @importFrom dplyr filter
-#' @importFrom dplyr mutate
-#' @importFrom dplyr pull
-#' @importFrom dplyr row_number
-#' @import kml
-#' @import lmf
-#' @import mclust
-#' @importFrom mclust adjustedRandIndex
+#' @import dplyr
 #' @importFrom magrittr `%>%`
-#' @import splines
-#' @importFrom stats as.dist coef dist kmeans lm rnorm runif var vcov
-#' @importFrom utils capture.output
+#' @importFrom mclust adjustedRandIndex
 #'
 #' @examples
+#' \dontrun{
 #' set.seed(808)
-#' iteration()
+#' sp <- "regular"
+#' Ng <- "50:50:50"
+#' ni <- 50
+#' sigma <- 1
+#' iteration()}
 iteration <- function(){
   cd <- create.data(sp, Ng, ni, sigma)
   G <- cd$G
@@ -59,42 +50,24 @@ cal.csa <- function(clus, oracle){
   return(max(csa))
 }
 
-# prediction method
-sim.pmkl <- function(cd, G, max_k = 6, vc = "II", qc = "CH",
-                     clusGap_boot = 100, lo = 10){
-  mod <- pmkl(cd$dat, lo, vc, qc, max_k, clusGap_boot)
-  # Outcome 1: number of clusters
-  khat <- length(mod$id.med)
-  # Outcome 2: adjusted rand index
-  ari <- adjustedRandIndex(mod$clustering, cd$oracle)
-  # Outcome 3: cluster specific accuracy
-  co <- create.pred(cd$dat, lo)
-  prox <- create.pro_mat(co, vc)
-  mod3 <- cluster::pam(as.dist(prox), k = G, nstart = 10)
-  csa <- cal.csa(mod3$clustering, cd$oracle)
-  #
-  return(data.frame(meth = "pred", vc = vc, qc = qc,
-                    khat = khat, ari = ari, csa = csa))
-}
-
+# prediction model-based k-medoids
 sim.pmkl <- function(cd, G, max_k = 6, vc = "II", qc = "CH",
                      clusGap_boot = 100, lo = 10){
   co <- create.pred(cd$dat, lo)
   # create proximities
-  prox <- create.pro_mat(co, vc)
+  prox_mat <- create.prox_mat(co, vc)
   # Outcome 1: number of clusters
-  khat <- cal.khat(prox, qc, max_k, clusGap_boot)
+  khat <- cal.khat(prox_mat, qc, max_k, clusGap_boot)
   # Outcome 2: adjusted rand index
-  mod2 <- cluster::pam(as.dist(prox), k = khat, nstart = 10)
+  mod2 <- cluster::pam(as.dist(prox_mat), k = khat, nstart = 10)
   ari <- adjustedRandIndex(mod2$clustering, cd$oracle)
   # Outcome 3: cluster specific accuracy
-  mod3 <- cluster::pam(as.dist(prox), k = G, nstart = 10)
+  mod3 <- cluster::pam(as.dist(prox_mat), k = G, nstart = 10)
   csa <- cal.csa(mod3$clustering, cd$oracle)
   #
   return(data.frame(meth = "pred", vc = vc, qc = qc,
                     khat = khat, ari = ari, csa = csa))
 }
-
 
 create.beta <- function(dat){
   idd <- unique(dat$id)
@@ -105,7 +78,7 @@ create.beta <- function(dat){
   vcm <- vector("list", length = N)
   for(i in 1:N){
     dat_sub <- dat %>%
-      filter(id == idd[i])
+      dplyr::filter(id == idd[i])
     y_i <- dat_sub$response
     B_i <- splines::bs(dat_sub$time, knots = c(10/3, 20/3), intercept = FALSE)
     mod <- lm(y_i ~ B_i)
@@ -122,6 +95,7 @@ sim.abe <- function(cd, G, max_k = 6, qc = "CH", clusGap_boot = 100){
   qc <- match.arg(qc, c("ASW", "CH", "Gap"))
   co <- create.beta(cd$dat)
   val <- co$val
+  # Outcome 1: number of clusters
   if(qc == "ASW"){
     khat <- rep(NA, max_k)
     for(k in 2:max_k){
@@ -140,6 +114,7 @@ sim.abe <- function(cd, G, max_k = 6, qc = "CH", clusGap_boot = 100){
     cg <- cluster::clusGap(val, kmeans, K.max = max_k, B = clusGap_boot, verbose = FALSE)
     khat <- cluster::maxSE(cg$Tab[, "gap"], cg$Tab[, "SE.sim"])
   }
+  # Outcome 2: adjusted rand index
   mod2 <- kmeans(val, khat, nstart = 10)
   ari <- adjustedRandIndex(mod2$cluster, cd$oracle)
   # Outcome 3: cluster specific accuracy
@@ -160,7 +135,7 @@ sim.mld <- function(cd, G, qc = "Gapb"){
     # Outcome 2: adjusted rand index
     clus <- mod$Dat.label %>%
       group_by(id) %>%
-      filter(row_number() == 1) %>%
+      dplyr::filter(row_number() == 1) %>%
       pull(label.CH)
     ari <- adjustedRandIndex(clus, cd$oracle)
   }else{
@@ -169,8 +144,9 @@ sim.mld <- function(cd, G, qc = "Gapb"){
     # Outcome 2: adjusted rand index
     clus <- mod$Dat.label %>%
       group_by(id) %>%
-      filter(row_number() == 1) %>%
+      dplyr::filter(row_number() == 1) %>%
       pull(label.Gapb)
+    ari <- adjustedRandIndex(clus, cd$oracle)
   }
   # Outcome 3: cluster specific accuracy
   l2 <- lapply(1:G, function(x){data.frame(id = mod$Cluster.Lists[[G]][[x]],
@@ -195,9 +171,9 @@ sim.kml <- function(cd, G, max_k = 6, vc = "ED"){
   }
   tid <- 1:ncol(dat_wide)
   mod <- kml::cld(dat_wide, idAll = id, time = t, timeInData = tid)
-  invisible(capture.output(kml::kml(mod, nbClusters = 2:max_k,
-                                    nbRedrawing = 1,
-                                    parAlgo = kml::parALGO(saveFreq = Inf))))
+  invisible(utils::capture.output(kml::kml(mod, nbClusters = 2:max_k,
+                                           nbRedrawing = 1,
+                                           parAlgo = kml::parALGO(saveFreq = Inf))))
   # Outcome 1: number of clusters
   ch <- unlist(mod["criterionValuesAsMatrix"])
   names(ch) <- NULL
@@ -216,12 +192,12 @@ sim.mclust <- function(cd, G, max_k = 6){
   co <- create.beta(cd$dat)
   val <- co$val
   # Outcome 1: number of clusters
-  invisible(capture.output(mod <- mclust::Mclust(val, G = 1:max_k)))
+  invisible(utils::capture.output(mod <- mclust::Mclust(val, G = 1:max_k)))
   khat <- mod$G
   # Outcome 2: adjusted rand index
   ari <- adjustedRandIndex(mod$classification, cd$oracle)
   # Outcome 3: cluster specific accuracy
-  invisible(capture.output(mod3 <- mclust::Mclust(val, G = G)))
+  invisible(utils::capture.output(mod3 <- mclust::Mclust(val, G = G)))
   csa <- cal.csa(mod3$classification, cd$oracle)
   #
   return(data.frame(meth = "mclust", vc = NA, qc = "BIC",

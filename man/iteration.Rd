@@ -13,6 +13,11 @@ A \code{data.frame}.
 An iteration of a simulation run
 }
 \examples{
+\dontrun{
 set.seed(808)
-iteration()
+sp <- "regular"
+Ng <- "50:50:50"
+ni <- 50
+sigma <- 1
+iteration()}
 }
