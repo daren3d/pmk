@@ -9,7 +9,6 @@
 #'
 #' @return The results from `cluster::pam`; a `pam` object.
 #' @export
-#' @import dplyr
 #' @importFrom magrittr `%>%`
 #' @import stats
 #'
@@ -38,13 +37,13 @@ create.pred <- function(dat, lo = 10){
   N <- length(idd)
   # Sequence of time points
   t_first <- dat %>%
-    group_by(id) %>%
+    dplyr::group_by(id) %>%
     dplyr::filter(row_number() == 1) %>%
-    pull(time)
+    dplyr::pull(time)
   t_last <- dat %>%
-    group_by(id) %>%
+    dplyr::group_by(id) %>%
     dplyr::filter(row_number() == n()) %>%
-    pull(time)
+    dplyr::pull(time)
   tps <- seq(max(t_first), min(t_last), length.out = lo)
   s <- data.frame(time = tps)
   # Fit models

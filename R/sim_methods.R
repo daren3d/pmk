@@ -4,7 +4,6 @@
 #' @export
 #' @import dplyr
 #' @importFrom magrittr `%>%`
-#' @importFrom mclust adjustedRandIndex
 #'
 #' @examples
 #' \dontrun{
@@ -60,7 +59,7 @@ sim.pmkl <- function(cd, G, max_k = 6, vc = "II", qc = "CH",
   khat <- cal.khat(prox_mat, qc, max_k, clusGap_boot)
   # Outcome 2: adjusted rand index
   mod2 <- cluster::pam(as.dist(prox_mat), k = khat, nstart = 10)
-  ari <- adjustedRandIndex(mod2$clustering, cd$oracle)
+  ari <- mclust::adjustedRandIndex(mod2$clustering, cd$oracle)
   # Outcome 3: cluster specific accuracy
   mod3 <- cluster::pam(as.dist(prox_mat), k = G, nstart = 10)
   csa <- cal.csa(mod3$clustering, cd$oracle)
@@ -116,7 +115,7 @@ sim.abe <- function(cd, G, max_k = 6, qc = "CH", clusGap_boot = 100){
   }
   # Outcome 2: adjusted rand index
   mod2 <- kmeans(val, khat, nstart = 10)
-  ari <- adjustedRandIndex(mod2$cluster, cd$oracle)
+  ari <- mclust::adjustedRandIndex(mod2$cluster, cd$oracle)
   # Outcome 3: cluster specific accuracy
   mod3 <- kmeans(val, G, nstart = 10)
   csa <- cal.csa(mod3$cluster, cd$oracle)
@@ -137,7 +136,7 @@ sim.mld <- function(cd, G, qc = "Gapb"){
       group_by(id) %>%
       dplyr::filter(row_number() == 1) %>%
       pull(label.CH)
-    ari <- adjustedRandIndex(clus, cd$oracle)
+    ari <- mclust::adjustedRandIndex(clus, cd$oracle)
   }else{
     # Outcome 1: number of clusters
     khat <- mod$No.Gapb
@@ -146,7 +145,7 @@ sim.mld <- function(cd, G, qc = "Gapb"){
       group_by(id) %>%
       dplyr::filter(row_number() == 1) %>%
       pull(label.Gapb)
-    ari <- adjustedRandIndex(clus, cd$oracle)
+    ari <- mclust::adjustedRandIndex(clus, cd$oracle)
   }
   # Outcome 3: cluster specific accuracy
   l2 <- lapply(1:G, function(x){data.frame(id = mod$Cluster.Lists[[G]][[x]],
@@ -179,7 +178,7 @@ sim.kml <- function(cd, G, max_k = 6, vc = "ED"){
   names(ch) <- NULL
   khat <- flm(ch) + 1
   # Outcome 2: adjusted rand index
-  ari <- adjustedRandIndex(kml::getClusters(mod, khat), cd$oracle)
+  ari <- mclust::adjustedRandIndex(kml::getClusters(mod, khat), cd$oracle)
   # Outcome 3: cluster specific accuracy
   csa <- cal.csa(kml::getClusters(mod, G), cd$oracle)
   #
@@ -195,7 +194,7 @@ sim.mclust <- function(cd, G, max_k = 6){
   invisible(utils::capture.output(mod <- mclust::Mclust(val, G = 1:max_k)))
   khat <- mod$G
   # Outcome 2: adjusted rand index
-  ari <- adjustedRandIndex(mod$classification, cd$oracle)
+  ari <- mclust::adjustedRandIndex(mod$classification, cd$oracle)
   # Outcome 3: cluster specific accuracy
   invisible(utils::capture.output(mod3 <- mclust::Mclust(val, G = G)))
   csa <- cal.csa(mod3$classification, cd$oracle)

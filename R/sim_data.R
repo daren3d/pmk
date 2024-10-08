@@ -8,6 +8,7 @@
 #' @return A `list` with data in long and wide form, true cluster assignments and true number of clusters.
 #' @export
 #' @import dplyr
+#' @importFrom magrittr `%>%`
 #'
 #' @examples
 #' set.seed(808)
