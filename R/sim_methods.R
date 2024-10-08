@@ -26,16 +26,13 @@ iteration <- function(){
   pe7 <- sim.pmkl(cd, G, max_k, vc = "MD", qc = "ASW")
   pe8 <- sim.pmkl(cd, G, max_k, vc = "MD", qc = "CH")
   pe9 <- sim.pmkl(cd, G, max_k, vc = "MD", qc = "Gap", clusGap_boot)
-  ab1 <- sim.abe(cd, G, max_k, "ASW")
-  ab2 <- sim.abe(cd, G, max_k, "CH")
-  ab3 <- sim.abe(cd, G, max_k, "Gap", clusGap_boot)
+  abe <- sim.abe(cd, G, max_k, "CH")
   mld <- sim.mld(cd, G, "Gapb")
   kml <- sim.kml(cd, G, max_k, "ED")
   mcl <- sim.mclust(cd, G, max_k)
   ##
   out <- rbind(pe1, pe2, pe3, pe4, pe5, pe6, pe7, pe8, pe9,
-               ab1, ab2, ab3,
-               mld, kml, mcl) %>%
+               abe, mld, kml, mcl) %>%
     as.data.frame() %>%
     mutate(set = set, sp = sp, Ng = Ng, ni = ni, sigma = sigma, it = sim)
   return(out)
@@ -201,4 +198,52 @@ sim.mclust <- function(cd, G, max_k = 6){
   #
   return(data.frame(meth = "mclust", vc = NA, qc = "BIC",
                     khat = khat, ari = ari, csa = csa))
+}
+
+tab.pii <- function(set){
+  res2 <- sim_res %>%
+    filter(set == set, meth == "pred") %>%
+    mutate(vc = factor(vc, levels = c("II", "ED", "MD")),
+           qc = factor(qc, levels = c("CH", "ASW", "Gap"))) %>%
+    select(-it) %>%
+    group_by(vc, qc) %>%
+    summarise(khat_mean = sprintf("%.3f", round(mean(khat), 3)),
+              khat_sd = sprintf("%.3f", round(sd(khat), 3)),
+              ari_mean = sprintf("%.3f", round(mean(ari), 3)),
+              ari_sd = sprintf("%.3f", round(sd(ari), 3)),
+              csa_mean = sprintf("%.3f", round(mean(csa), 3)),
+              csa_sd = sprintf("%.3f", round(sd(csa), 3)),
+              .groups = "drop") %>%
+    mutate(khat = paste0(khat_mean, " (", khat_sd, ")"),
+           ari = paste0(ari_mean, " (", ari_sd, ")"),
+           csa = paste0(csa_mean, " (", csa_sd, ")"),
+           combo = paste("&", paste(khat, ari, csa, sep = " & ")),
+           .keep = "unused") %>%
+    select(vc, qc, khat, ari, csa, combo)
+  return(res2)
+}
+
+tab.rival <- function(set){
+  res2_pii <- sim_res %>%
+    filter(set == set, meth == "pred", vc == "II", qc == "CH")
+  res2_riv <- sim_res %>%
+    filter(set == set, meth != "pred")
+  res3 <- rbind(res2_pii, res2_riv) %>%
+    mutate(meth = factor(meth, levels = c("pred", "mld", "abe", "mclust", "kml", "fun"))) %>%
+    select(-it, -vc, -qc) %>%
+    group_by(meth) %>%
+    summarise(khat_mean = sprintf("%.3f", round(mean(khat), 3)),
+              khat_sd = sprintf("%.3f", round(sd(khat), 3)),
+              ari_mean = sprintf("%.3f", round(mean(ari), 3)),
+              ari_sd = sprintf("%.3f", round(sd(ari), 3)),
+              csa_mean = sprintf("%.3f", round(mean(csa), 3)),
+              csa_sd = sprintf("%.3f", round(sd(csa), 3)),
+              .groups = "drop") %>%
+    mutate(khat = paste0(khat_mean, " (", khat_sd, ")"),
+           ari = paste0(ari_mean, " (", ari_sd, ")"),
+           csa = paste0(csa_mean, " (", csa_sd, ")"),
+           combo = paste("&", paste(khat, ari, csa, sep = " & ")),
+           .keep = "unused") %>%
+    select(meth, khat, ari, csa, combo)
+  return(res3)
 }
