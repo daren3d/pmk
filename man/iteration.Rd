@@ -14,6 +14,7 @@ An iteration of a simulation run
 }
 \examples{
 \dontrun{
+clusGap_boot <- 500
 set.seed(808)
 sp <- "regular"
 Ng <- "50:50:50"

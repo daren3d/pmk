@@ -7,6 +7,7 @@
 #'
 #' @examples
 #' \dontrun{
+#' clusGap_boot <- 500
 #' set.seed(808)
 #' sp <- "regular"
 #' Ng <- "50:50:50"
@@ -202,7 +203,7 @@ sim.mclust <- function(cd, G, max_k = 6){
 
 tab.pii <- function(set){
   res2 <- sim_res %>%
-    filter(set == set, meth == "pred") %>%
+    dplyr::filter(set == set, meth == "pred") %>%
     mutate(vc = factor(vc, levels = c("II", "ED", "MD")),
            qc = factor(qc, levels = c("CH", "ASW", "Gap"))) %>%
     select(-it) %>%
@@ -225,9 +226,9 @@ tab.pii <- function(set){
 
 tab.rival <- function(set){
   res2_pii <- sim_res %>%
-    filter(set == set, meth == "pred", vc == "II", qc == "CH")
+    dplyr::filter(set == set, meth == "pred", vc == "II", qc == "CH")
   res2_riv <- sim_res %>%
-    filter(set == set, meth != "pred")
+    dplyr::filter(set == set, meth != "pred")
   res3 <- rbind(res2_pii, res2_riv) %>%
     mutate(meth = factor(meth, levels = c("pred", "mld", "abe", "mclust", "kml", "fun"))) %>%
     select(-it, -vc, -qc) %>%
