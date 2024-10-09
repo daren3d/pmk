@@ -218,9 +218,8 @@ tab.pii <- function(set){
     mutate(khat = paste0(khat_mean, " (", khat_sd, ")"),
            ari = paste0(ari_mean, " (", ari_sd, ")"),
            csa = paste0(csa_mean, " (", csa_sd, ")"),
-           combo = paste("&", paste(khat, ari, csa, sep = " & ")),
            .keep = "unused") %>%
-    select(vc, qc, khat, ari, csa, combo)
+    select(vc, qc, khat, ari, csa)
   return(res2)
 }
 
@@ -243,8 +242,7 @@ tab.rival <- function(set){
     mutate(khat = paste0(khat_mean, " (", khat_sd, ")"),
            ari = paste0(ari_mean, " (", ari_sd, ")"),
            csa = paste0(csa_mean, " (", csa_sd, ")"),
-           combo = paste("&", paste(khat, ari, csa, sep = " & ")),
            .keep = "unused") %>%
-    select(meth, khat, ari, csa, combo)
+    select(meth, khat, ari, csa)
   return(res3)
 }
