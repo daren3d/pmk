@@ -2,7 +2,6 @@
 #'
 #' @return A `data.frame`.
 #' @export
-#' @import dplyr
 #' @importFrom magrittr `%>%`
 #'
 #' @examples
@@ -30,7 +29,7 @@ iteration <- function(){
   ##
   out <- rbind(pe1, pe2, pe3, pe4, pe5, pe6, pe7, pe8, pe9) %>%
     as.data.frame() %>%
-    mutate(set = set, sp = sp, Ng = Ng, ni = ni, sigma = sigma, it = sim)
+    dplyr::mutate(set = set, sp = sp, Ng = Ng, ni = ni, sigma = sigma, it = sim)
   return(out)
 }
 
@@ -65,21 +64,21 @@ sim.pmkl <- function(cd, G, max_k = 6, vc = "II", qc = "CH",
 tab.pii <- function(set){
   res2 <- sim_res %>%
     dplyr::filter(set == set, meth == "pred") %>%
-    mutate(vc = factor(vc, levels = c("II", "ED", "MD")),
-           qc = factor(qc, levels = c("CH", "ASW", "Gap"))) %>%
-    select(-it) %>%
-    group_by(vc, qc) %>%
-    summarise(khat_mean = sprintf("%.3f", round(mean(khat), 3)),
-              khat_sd = sprintf("%.3f", round(sd(khat), 3)),
-              ari_mean = sprintf("%.3f", round(mean(ari), 3)),
-              ari_sd = sprintf("%.3f", round(sd(ari), 3)),
-              csa_mean = sprintf("%.3f", round(mean(csa), 3)),
-              csa_sd = sprintf("%.3f", round(sd(csa), 3)),
-              .groups = "drop") %>%
-    mutate(khat = paste0(khat_mean, " (", khat_sd, ")"),
-           ari = paste0(ari_mean, " (", ari_sd, ")"),
-           csa = paste0(csa_mean, " (", csa_sd, ")"),
-           .keep = "unused") %>%
-    select(vc, qc, khat, ari, csa)
+    dplyr::mutate(vc = factor(vc, levels = c("II", "ED", "MD")),
+                  qc = factor(qc, levels = c("CH", "ASW", "Gap"))) %>%
+    dplyr::select(-it) %>%
+    dplyr::group_by(vc, qc) %>%
+    dplyr::summarise(khat_mean = sprintf("%.3f", round(mean(khat), 3)),
+                     khat_sd = sprintf("%.3f", round(sd(khat), 3)),
+                     ari_mean = sprintf("%.3f", round(mean(ari), 3)),
+                     ari_sd = sprintf("%.3f", round(sd(ari), 3)),
+                     csa_mean = sprintf("%.3f", round(mean(csa), 3)),
+                     csa_sd = sprintf("%.3f", round(sd(csa), 3)),
+                     .groups = "drop") %>%
+    dplyr::mutate(khat = paste0(khat_mean, " (", khat_sd, ")"),
+                  ari = paste0(ari_mean, " (", ari_sd, ")"),
+                  csa = paste0(csa_mean, " (", csa_sd, ")"),
+                  .keep = "unused") %>%
+    dplyr::select(vc, qc, khat, ari, csa)
   return(res2)
 }

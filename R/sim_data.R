@@ -7,7 +7,6 @@
 #'
 #' @return A `list` with data in long and wide form, true cluster assignments and true number of clusters.
 #' @export
-#' @import dplyr
 #' @importFrom magrittr `%>%`
 #'
 #' @examples
@@ -42,17 +41,17 @@ create.data <- function(sp = "regular", Ng = "50:50:50", ni = 50, sigma = 1){
     dat_time$time <- dat_time$t3
   }
   dat <- dat_time %>%
-    left_join(dat_oracle, by = "id")
+    dplyr::left_join(dat_oracle, by = "id")
   n <- nrow(dat_time)
   dat <- dat |>
     lapply(X = 1:G, FUN = create.fun) |>
     do.call(what = rbind) %>%
-    mutate(er = rnorm(n, sd = sigma),
-           response = f + er)
+    dplyr::mutate(er = rnorm(n, sd = sigma),
+                  response = f + er)
   dat_wide <- dat %>%
-    select(id, t0, response) %>%
+    dplyr::select(id, t0, response) %>%
     tidyr::pivot_wider(names_from = t0, values_from = response) %>%
-    select(-id)
+    dplyr::select(-id)
   return(list(dat = dat, dat_wide = dat_wide, oracle = or, G = G))
 }
 create.A <- function(t){
@@ -71,6 +70,6 @@ create.fun <- function(x, dat){
   g <- LETTERS[x]
   dat <- dat %>%
     dplyr::filter(oracle == g) %>%
-    mutate(f = eval(parse(text = paste0("create.", g, "(time)"))))
+    dplyr::mutate(f = eval(parse(text = paste0("create.", g, "(time)"))))
   return(dat)
 }

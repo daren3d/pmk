@@ -38,11 +38,11 @@ create.pred <- function(dat, lo = 10){
   # Sequence of time points
   t_first <- dat %>%
     dplyr::group_by(id) %>%
-    dplyr::filter(row_number() == 1) %>%
+    dplyr::filter(dplyr::row_number() == 1) %>%
     dplyr::pull(time)
   t_last <- dat %>%
     dplyr::group_by(id) %>%
-    dplyr::filter(row_number() == n()) %>%
+    dplyr::filter(dplyr::row_number() == dplyr::n()) %>%
     dplyr::pull(time)
   tps <- seq(max(t_first), min(t_last), length.out = lo)
   s <- data.frame(time = tps)

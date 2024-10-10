@@ -3,6 +3,5 @@
 export(create.data)
 export(iteration)
 export(pmkl)
-import(dplyr)
 import(stats)
 importFrom(magrittr,`%>%`)
