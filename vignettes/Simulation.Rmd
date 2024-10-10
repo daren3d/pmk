@@ -60,7 +60,7 @@ ss1
 
 ## Workflow
 
-The simulations were performed with the help of RMarkdown's [parameterized reports](https://bookdown.org/yihui/rmarkdown/parameterized-reports.html).  Using this tool, we iterate over the rows in the previous data frame to provide a set of simulation parameters, which are fed into an RMarkdown file with the corresponding YAML header.  Then the following chunk performs the simulation in parallel for 500 iterations.
+The simulations were performed with the help of RMarkdown's [parameterized reports](https://bookdown.org/yihui/rmarkdown/parameterized-reports.html).  Using this tool, each row in the previous data frame is used as a set of simulation parameters fed into an RMarkdown file with an appropriate YAML header and the following code chunk, which will perform the simulation in parallel for 500 iterations.
 ```{r,eval=FALSE}
 # eval = FALSE
 library(doParallel)
@@ -73,9 +73,8 @@ set.seed(808)
 stopCluster(cl)
 ```
 
-Finally, we have included our raw simulation results, and two functions to calculate summaries and format them to display as mean (sd).
+Finally, we have included our raw simulation results, and a function to calculate summaries and format them to display as mean (sd).
 ```{r}
 data("sim_res")
 pmkl:::tab.pii(1)
-pmkl:::tab.rival(1)
 ```
